@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mysql:9.6
+    environment:
+      MYSQL_DATABASE: transaction
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+    volumes:
+      - transaction_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uapp", "-papp" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    environment:
+      - DATASOURCE_URL=jdbc:mysql://db/transaction
+      - DATASOURCE_USERNAME=app
+      - DATASOURCE_PASSWORD=app
+      - OPEN_AI_BASE_URL=http://ollama:11434/v1
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+
+  ollama:
+    build: ./ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=1h
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ "gpu" ]
+              count: all
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  transaction_data:
+  ollama:

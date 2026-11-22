@@ -1,0 +1,4 @@
+CREATE TABLE category (
+        id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID(), 1)),
+        name VARCHAR(255) NOT NULL
+);
